@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KIHAMPA JR - Network App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @keyframes discoLights {
+            0% { color: #ff0055; text-shadow: 0 0 10px #ff0055; }
+            25% { color: #00e5ff; text-shadow: 0 0 10px #00e5ff; }
+            50% { color: #39ff14; text-shadow: 0 0 10px #39ff14; }
+            75% { color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
+            100% { color: #ffea00; text-shadow: 0 0 10px #ffea00; }
+        }
+        .disco-brand {
+            font-weight: 900;
+            animation: discoLights 1.5s infinite alternate ease-in-out;
+            cursor: pointer;
+            user-select: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes loadingLine {
+            0% { width: 0%; left: 0; }
+            50% { width: 70%; left: 15%; }
+            100% { width: 100%; left: 0; }
+        }
+        .animate-loader { animation: loadingLine 0.8s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-[#1f1f23] text-gray-100 font-sans min-h-screen pb-6 selection:bg-blue-600">
+
+    <!-- TOP HEADER -->
+    <header id="topHeader" class="w-full max-w-md mx-auto p-4 relative flex justify-center items-center">
+        <div onclick="handleBrandTap()" class="text-3xl font-black disco-brand tracking-wider text-center py-1">
+            KIHAMPA JR
+        </div>
+        <button onclick="openMailBox()" id="userAvatarBtn" class="absolute right-4 top-4 w-9 h-9 rounded-full bg-[#2d2f36] border border-gray-700 flex items-center justify-center text-blue-400 font-bold text-sm shadow hover:border-blue-500 transition uppercase">
+            <i id="userAvatarIcon" class="fa-solid fa-user"></i>
+            <span id="userAvatarInitial" class="hidden"></span>
+        </button>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-md mx-auto px-4 space-y-3">
+        
+        <!-- SEARCH BAR -->
+        <div class="sticky top-2 z-50 space-y-1">
+            <form onsubmit="executeGoogleSearch(event)" class="w-full">
+                <div class="flex items-center bg-[#2b2d33] border border-gray-700/60 rounded-full px-4 py-3 shadow-lg focus-within:border-blue-500 transition relative">
+                    <input type="text" id="searchInput" placeholder="Tafuta kwenye Google..." class="w-full text-base bg-transparent outline-none text-white placeholder-gray-400 pl-2 pr-16" required>
+                    <div class="absolute right-4 flex items-center gap-3 text-gray-300">
+                        <button type="submit" id="searchSubmitBtn" title="Tafuta Google">
+                            <i id="searchIcon" class="fa-solid fa-magnifying-glass text-lg text-blue-400"></i>
+                        </button>
+                        <button type="button" onclick="startVoiceSearch()" title="Ongea"><i class="fa-solid fa-microphone text-lg hover:text-blue-400"></i></button>
+                    </div>
+                </div>
+            </form>
+
+            <div id="searchProgressBar" class="h-1 w-full bg-gray-800 rounded-full overflow-hidden hidden relative">
+                <div class="h-full bg-blue-500 rounded-full animate-loader relative"></div>
+            </div>
+        </div>
+
+        <!-- SEARCH VIEW DISPLAY -->
+        <div id="searchViewContainer" class="hidden w-full flex-col pt-2">
+            <div class="flex justify-between items-center bg-[#2b2d33] px-3 py-2 rounded-t-2xl border-t border-x border-gray-700">
+                <span class="text-xs font-bold text-blue-400 flex items-center gap-1.5">
+                    <i class="fa-brands fa-google"></i> Matokeo ya Google
+                </span>
+                <button onclick="closeSearchView()" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-xmark"></i> Funga Google
+                </button>
+            </div>
+            <iframe id="googleFrame" class="w-full h-[calc(100vh-140px)] rounded-b-2xl border border-gray-700 bg-white" src=""></iframe>
+        </div>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <div id="mainDashboardContent" class="space-y-4">
+            
+            <!-- TICKER -->
+            <div class="bg-[#2b2d33]/80 border border-emerald-500/30 rounded-2xl p-2.5 flex items-center gap-2 overflow-hidden shadow-inner">
+                <span class="bg-emerald-500 text-black text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0 uppercase tracking-wider">
+                    <i class="fa-solid fa-bolt text-yellow-300"></i> Dondoo
+                </span>
+                <marquee id="motivationTicker" class="text-xs text-emerald-300 font-semibold tracking-wide" behavior="scroll" direction="left" scrollamount="5">
+                    🔥 Kihampa Jr App: Karibu upate habari, muziki na burudani zote mpya!
+                </marquee>
+            </div>
+
+            <!-- SHORTCUTS -->
+            <div class="space-y-2 pt-1">
+                <div class="flex justify-between items-center px-1">
+                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        <i class="fa-solid fa-compass text-blue-400"></i> Njia za Haraka & Mitandao
+                    </span>
+                </div>
+                <div id="shortcutsContainer" class="flex items-center gap-2.5 overflow-x-auto pb-1 hide-scrollbar">
+                    <button onclick="executeQuickSearch('Google')" class="flex flex-col items-center justify-center p-2.5 min-w-[62px] bg-[#2b2d33] border border-gray-700/60 rounded-2xl hover:border-red-500 transition shadow shrink-0">
+                        <i class="fa-brands fa-google text-red-400 text-lg"></i>
+                        <span class="text-[10px] text-gray-300 font-bold mt-1">Google</span>
+                    </button>
+                    <button onclick="executeQuickSearch('YouTube')" class="flex flex-col items-center justify-center p-2.5 min-w-[62px] bg-[#2b2d33] border border-gray-700/60 rounded-2xl hover:border-red-600 transition shadow shrink-0">
+                        <i class="fa-brands fa-youtube text-red-600 text-xl"></i>
+                        <span class="text-[10px] text-gray-300 font-bold mt-1">YouTube</span>
+                    </button>
+                    <a href="https://chatgpt.com" target="_blank" class="flex flex-col items-center justify-center p-2.5 min-w-[62px] bg-[#2b2d33] border border-gray-700/60 rounded-2xl hover:border-emerald-500 transition shadow shrink-0">
+                        <i class="fa-solid fa-robot text-emerald-400 text-lg"></i>
+                        <span class="text-[10px] text-gray-300 font-bold mt-1">ChatGPT</span>
+                    </a>
+                    <a href="https://gemini.google.com" target="_blank" class="flex flex-col items-center justify-center p-2.5 min-w-[62px] bg-[#2b2d33] border border-gray-700/60 rounded-2xl hover:border-blue-400 transition shadow shrink-0">
+                        <i class="fa-solid fa-sparkles text-blue-400 text-lg"></i>
+                        <span class="text-[10px] text-gray-300 font-bold mt-1">Gemini</span>
+                    </a>
+                    
+                    <div id="userShortcutsList" class="flex gap-2.5"></div>
+
+                    <button onclick="openAddShortcutModal()" class="flex flex-col items-center justify-center p-2.5 min-w-[62px] bg-[#2b2d33] border border-dashed border-gray-500 rounded-2xl hover:border-blue-400 hover:text-blue-400 transition shadow shrink-0">
+                        <i class="fa-solid fa-plus text-xl text-blue-400"></i>
+                        <span class="text-[10px] text-gray-300 font-bold mt-1">Ongeza</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- CHIPS -->
+            <div class="flex items-center justify-between gap-2 overflow-x-auto py-1 text-xs font-medium">
+                <button onclick="executeQuickSearch('Habari Mpya Tanzania')" class="flex-1 min-w-[100px] bg-[#2b2d33] hover:bg-[#353840] py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 border border-gray-700/50 transition">
+                    <i class="fa-solid fa-newspaper text-blue-400"></i>
+                    <span>Habari Mpya</span>
+                </button>
+                <button onclick="openMailBox()" class="flex-1 min-w-[90px] bg-[#2b2d33] hover:bg-[#353840] py-2.5 px-3 rounded-2xl flex items-center justify-center gap-2 border border-gray-700/50 transition">
+                    <i class="fa-solid fa-envelope text-yellow-400"></i>
+                    <span>Email</span>
+                </button>
+                <button onclick="executeQuickSearch('Muziki Mpya Tanzania')" class="bg-[#2b2d33] hover:bg-[#353840] p-2.5 rounded-2xl flex items-center justify-center border border-gray-700/50 px-4 transition">
+                    <i class="fa-solid fa-music text-pink-500 text-sm"></i>
+                </button>
+            </div>
+
+            <!-- DISCOVER FEED -->
+            <section id="defaultFeedSection" class="space-y-4 pt-2">
+                <div class="flex items-center justify-between px-1">
+                    <span class="text-xs font-bold text-gray-400">Habari & Matangazo (Discover Feed)</span>
+                    <button onclick="fetchAllGlobalNews()" class="text-xs text-blue-400 hover:underline flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-right text-[10px]"></i> Velisha Mpya
+                    </button>
+                </div>
+                <div id="postsFeedList" class="space-y-4"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- FULL POST READER MODAL -->
+    <div id="postReaderModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[120] hidden flex items-center justify-center p-3">
+        <div class="bg-[#2b2d33] border border-gray-700 rounded-3xl p-5 w-full max-w-md space-y-4 shadow-2xl relative text-gray-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-3 sticky top-0 bg-[#2b2d33] z-10">
+                <span id="readerSource" class="text-xs font-bold text-blue-400 uppercase">Kihampa Official</span>
+                <button onclick="closePostReader()" class="text-gray-400 hover:text-white bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <img id="readerImage" src="" class="w-full h-56 object-cover rounded-2xl border border-gray-700">
+            
+            <h2 id="readerTitle" class="text-lg font-bold text-white leading-snug"></h2>
+            
+            <div id="readerContent" class="text-sm text-gray-300 space-y-3 leading-relaxed whitespace-pre-line border-t border-gray-800 pt-3"></div>
+
+            <div id="readerExternalLinkArea" class="pt-2"></div>
+        </div>
+    </div>
+
+    <!-- MODALS ENGINE -->
+    <div id="addShortcutModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-[#2b2d33] border border-gray-700 rounded-3xl p-5 w-full max-w-sm space-y-4 shadow-2xl relative text-gray-100">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-3">
+                <h3 class="font-bold text-sm text-blue-400 flex items-center gap-2">
+                    <i class="fa-solid fa-link"></i> Ongeza Njia ya Haraka
+                </h3>
+                <button onclick="closeAddShortcutModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="saveCustomShortcut(event)" class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-400">Jina la Mtandao / Tovuti:</label>
+                    <input type="text" id="shortcutNameInput" placeholder="mfano: TikTok, X, Boomplay" required class="w-full bg-[#1f1f23] border border-gray-700 p-2.5 rounded-xl text-xs text-white outline-none mt-1 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-400">Anwani ya Tovuti (URL):</label>
+                    <input type="url" id="shortcutUrlInput" placeholder="https://..." required class="w-full bg-[#1f1f23] border border-gray-700 p-2.5 rounded-xl text-xs text-blue-400 outline-none mt-1 focus:border-blue-500">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Hifadhi Link
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL -->
+    <div id="secretAdminModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-[#2b2d33] border border-emerald-500/50 rounded-3xl p-6 w-full max-w-sm space-y-5 shadow-2xl relative text-gray-100 my-auto max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-3">
+                <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2">
+                    <i class="fa-solid fa-user-shield"></i> Kibox cha Siri cha Admin
+                </h3>
+                <button onclick="closeSecretAdminModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="flex border-b border-gray-700 text-xs font-bold">
+                <button id="btnTabPost" onclick="switchAdminTab('post')" class="flex-1 py-2 border-b-2 border-emerald-500 text-emerald-400">Chapisha Post</button>
+                <button id="btnTabManage" onclick="switchAdminTab('manage')" class="flex-1 py-2 text-gray-400 hover:text-white">Futa / Simamia</button>
+            </div>
+
+            <form id="adminPostForm" onsubmit="publishAdminPost(event)" class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-400">Kichwa cha Habari / Tangazo:</label>
+                    <input type="text" id="adminPostTitle" placeholder="Ingiza kichwa cha habari..." required class="w-full bg-[#1f1f23] border border-gray-700 p-2.5 rounded-xl text-xs text-white outline-none mt-1 focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-400">Maelezo Kamili:</label>
+                    <textarea id="adminPostDetails" rows="5" placeholder="Andika maelezo yote hapa..." required class="w-full bg-[#1f1f23] border border-gray-700 p-2.5 rounded-xl text-xs text-white outline-none mt-1 focus:border-emerald-500"></textarea>
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-400">Link ya Picha (Image URL):</label>
+                    <input type="url" id="adminPostImage" placeholder="https://..." class="w-full bg-[#1f1f23] border border-gray-700 p-2.5 rounded-xl text-xs text-blue-400 outline-none mt-1 focus:border-emerald-500">
+                </div>
+                <button type="submit" id="adminSubmitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Chapisha Kwenye App
+                </button>
+            </form>
+
+            <div id="adminManageSection" class="hidden space-y-3">
+                <p class="text-[11px] text-gray-400">Bofya kitufe cha futa kuondoa habari kwenye mfumo:</p>
+                <div id="adminPostsManageList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIL MODAL -->
+    <div id="mailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] hidden flex items-center justify-center p-4">
+        <div class="bg-[#2b2d33] border border-gray-700 rounded-3xl p-6 w-full max-w-sm space-y-4 shadow-2xl relative text-gray-100">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-3">
+                <h3 class="font-bold text-sm text-blue-400">Akaunti ya Kihampa Jr Network</h3>
+                <button onclick="closeMailModal()" class="text-gray-400 hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <form id="profileRegisterForm" onsubmit="saveUserProfile(event)" class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-400">Jina Lako:</label>
+                    <input type="text" id="userNameVal" placeholder="Ingiza jina..." required class="w-full bg-[#1f1f23] border border-gray-700 p-2.5 rounded-xl text-xs text-white font-medium outline-none mt-1 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-gray-400">Email Yako:</label>
+                    <input type="email" id="userEmailVal" placeholder="mfano@gmail.com" required class="w-full bg-[#1f1f23] border border-gray-700 p-2.5 rounded-xl text-xs text-blue-400 font-bold outline-none mt-1 focus:border-blue-500">
+                </div>
+                <button id="saveUserBtn" type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow">
+                    Hifadhi & Jisajili
+                </button>
+            </form>
+
+            <div id="profileDisplayCard" class="hidden space-y-4 py-2">
+                <div class="flex items-center gap-3 bg-[#1f1f23] p-3 rounded-2xl border border-gray-700/80">
+                    <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-black text-xl shadow" id="cardAvatarLetter">
+                        K
+                    </div>
+                    <div class="overflow-hidden">
+                        <h4 id="cardUserName" class="font-bold text-sm text-white truncate">Jina Lako</h4>
+                        <p id="cardUserEmail" class="text-xs text-blue-400 font-semibold truncate">email@domain.com</p>
+                    </div>
+                </div>
+                <div class="bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl text-emerald-400 text-[11px] flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-base"></i>
+                    <span>Akaunti yako ipo active na imethibitishwa!</span>
+                </div>
+                <button onclick="resetUserProfile()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 font-bold py-2 rounded-xl text-xs transition">
+                    Ondoka / Badili Akaunti
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://afoctgffndfdyebjwymd.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_w5n9ZalCiOCGJ21DT5sytQ_RADtQsZJ";
+        let _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let globalFeedData = [];
+
+        // --- SEARCH ENGINE ---
+        function executeGoogleSearch(e) {
+            if (e) e.preventDefault();
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+
+            const progressBar = document.getElementById('searchProgressBar');
+            const mainDashboard = document.getElementById('mainDashboardContent');
+            const searchView = document.getElementById('searchViewContainer');
+            const googleFrame = document.getElementById('googleFrame');
+
+            progressBar.classList.remove('hidden');
+
+            setTimeout(() => {
+                progressBar.classList.add('hidden');
+                let targetUrl = (query.startsWith("http://") || query.startsWith("https://")) 
+                    ? query 
+                    : `https://www.google.com/search?igu=1&q=${encodeURIComponent(query)}`;
+
+                googleFrame.src = targetUrl;
+                mainDashboard.classList.add('hidden');
+                searchView.classList.remove('hidden');
+                searchView.classList.add('flex');
+            }, 400);
+        }
+
+        function closeSearchView() {
+            document.getElementById('googleFrame').src = '';
+            document.getElementById('searchViewContainer').classList.add('hidden');
+            document.getElementById('searchViewContainer').classList.remove('flex');
+            document.getElementById('mainDashboardContent').classList.remove('hidden');
+        }
+
+        function executeQuickSearch(query) {
+            document.getElementById('searchInput').value = query;
+            executeGoogleSearch();
+        }
+
+        function startVoiceSearch() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'sw-TZ';
+                recognition.onstart = () => { document.getElementById('searchInput').placeholder = "Sikiliza... Ongea sasa..."; };
+                recognition.onresult = (e) => {
+                    document.getElementById('searchInput').value = e.results[0][0].transcript;
+                    executeGoogleSearch();
+                };
+                recognition.start();
+            } else {
+                alert("Kifaa chako hakitimizi masharti ya Voice Search.");
+            }
+        }
+
+        // --- SHORTCUTS SYSTEM ---
+        function openAddShortcutModal() { document.getElementById('addShortcutModal').classList.remove('hidden'); }
+        function closeAddShortcutModal() { document.getElementById('addShortcutModal').classList.add('hidden'); }
+
+        function saveCustomShortcut(e) {
+            e.preventDefault();
+            const name = document.getElementById('shortcutNameInput').value.trim();
+            const url = document.getElementById('shortcutUrlInput').value.trim();
+            if (!name || !url) return;
+
+            let shortcuts = JSON.parse(localStorage.getItem('kihampa_custom_shortcuts') || '[]');
+            shortcuts.push({ name, url });
+            localStorage.setItem('kihampa_custom_shortcuts', JSON.stringify(shortcuts));
+
+            document.getElementById('shortcutNameInput').value = '';
+            document.getElementById('shortcutUrlInput').value = '';
+            closeAddShortcutModal();
+            renderUserShortcuts();
+        }
+
+        function renderUserShortcuts() {
+            const container = document.getElementById('userShortcutsList');
+            let shortcuts = JSON.parse(localStorage.getItem('kihampa_custom_shortcuts') || '[]');
+            container.innerHTML = shortcuts.map(sc => `
+                <a href="${sc.url}" target="_blank" class="flex flex-col items-center justify-center p-2.5 min-w-[62px] bg-[#2b2d33] border border-gray-700/60 rounded-2xl hover:border-blue-400 transition shadow shrink-0">
+                    <i class="fa-solid fa-earth-africa text-blue-400 text-lg"></i>
+                    <span class="text-[10px] text-gray-300 font-bold mt-1 truncate max-w-[50px]">${sc.name}</span>
+                </a>
+            `).join('');
+        }
+
+        // --- ADMIN SYSTEM ---
+        let brandTapCount = 0;
+        let tapTimer = null;
+        function handleBrandTap() {
+            brandTapCount++;
+            clearTimeout(tapTimer);
+            if (brandTapCount >= 10) {
+                brandTapCount = 0;
+                openSecretAdminModal();
+            } else {
+                tapTimer = setTimeout(() => { brandTapCount = 0; }, 3000);
+            }
+        }
+
+        function openSecretAdminModal() {
+            document.getElementById('secretAdminModal').classList.remove('hidden');
+            switchAdminTab('post');
+        }
+
+        function closeSecretAdminModal() { document.getElementById('secretAdminModal').classList.add('hidden'); }
+
+        function switchAdminTab(tab) {
+            const btnPost = document.getElementById('btnTabPost');
+            const btnManage = document.getElementById('btnTabManage');
+            const formPost = document.getElementById('adminPostForm');
+            const secManage = document.getElementById('adminManageSection');
+
+            if (tab === 'post') {
+                btnPost.className = "flex-1 py-2 border-b-2 border-emerald-500 text-emerald-400";
+                btnManage.className = "flex-1 py-2 text-gray-400 hover:text-white";
+                formPost.classList.remove('hidden');
+                secManage.classList.add('hidden');
+            } else {
+                btnManage.className = "flex-1 py-2 border-b-2 border-emerald-500 text-emerald-400";
+                btnPost.className = "flex-1 py-2 text-gray-400 hover:text-white";
+                formPost.classList.add('hidden');
+                secManage.classList.remove('hidden');
+                loadAdminManagePosts();
+            }
+        }
+
+        async function publishAdminPost(e) {
+            e.preventDefault();
+            const title = document.getElementById('adminPostTitle').value.trim();
+            const details = document.getElementById('adminPostDetails').value.trim();
+            let rawImage = document.getElementById('adminPostImage').value.trim();
+            const submitBtn = document.getElementById('adminSubmitBtn');
+
+            if (!title || !details) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Inachapisha...`;
+
+            try {
+                const finalImg = rawImage || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600';
+                const { error } = await _supabase.from('ideas').insert([
+                    { title: title, details: details, image: finalImg }
+                ]);
+
+                if (error) throw error;
+
+                alert('✅ Post imechapishwa na kuhifadhiwa kikamilifu!');
+                document.getElementById('adminPostTitle').value = '';
+                document.getElementById('adminPostDetails').value = '';
+                document.getElementById('adminPostImage').value = '';
+                closeSecretAdminModal();
+                fetchAllGlobalNews();
+            } catch (err) {
+                alert('Hitilafu: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Chapisha Kwenye App`;
+            }
+        }
+
+        async function loadAdminManagePosts() {
+            const container = document.getElementById('adminPostsManageList');
+            container.innerHTML = `<div class="text-center py-4 text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i>Inapakia...</div>`;
+
+            try {
+                let { data, error } = await _supabase.from('ideas').select('*').order('created_at', { ascending: false });
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `<div class="text-center py-4 text-xs text-gray-400">Hakuna post bado.</div>`;
+                    return;
+                }
+
+                container.innerHTML = data.map(item => `
+                    <div class="bg-[#1f1f23] p-2.5 rounded-xl border border-gray-700 flex justify-between items-center gap-2">
+                        <div class="overflow-hidden">
+                            <h5 class="text-xs font-bold text-gray-200 truncate">${item.title}</h5>
+                            <p class="text-[10px] text-gray-400 truncate">${item.details}</p>
+                        </div>
+                        <button onclick="deleteAdminPost('${item.id}')" class="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-[10px] font-bold transition shrink-0">
+                            Futa
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                container.innerHTML = `<div class="text-center py-4 text-xs text-red-400">Imeshindwa kupakia.</div>`;
+            }
+        }
+
+        async function deleteAdminPost(id) {
+            if (!confirm("Je, una uhakika unataka kufuta?")) return;
+
+            try {
+                const { error } = await _supabase.from('ideas').delete().eq('id', id);
+                if (error) throw error;
+
+                alert("✅ Imefutwa!");
+                loadAdminManagePosts();
+                fetchAllGlobalNews();
+            } catch (err) {
+                alert("Hitilafu: " + err.message);
+            }
+        }
+
+        // --- USER PROFILE ---
+        function openMailBox() { document.getElementById('mailModal').classList.remove('hidden'); updateAvatarDisplay(); }
+        function closeMailModal() { document.getElementById('mailModal').classList.add('hidden'); }
+
+        function updateAvatarDisplay() {
+            const name = localStorage.getItem('kihampa_user_name');
+            const email = localStorage.getItem('kihampa_user_email');
+            const icon = document.getElementById('userAvatarIcon');
+            const initialSpan = document.getElementById('userAvatarInitial');
+            const regForm = document.getElementById('profileRegisterForm');
+            const displayCard = document.getElementById('profileDisplayCard');
+
+            if (name && email) {
+                const firstLetter = name.charAt(0).toUpperCase();
+                icon.classList.add('hidden');
+                initialSpan.classList.remove('hidden');
+                initialSpan.innerText = firstLetter;
+
+                regForm.classList.add('hidden');
+                displayCard.classList.remove('hidden');
+
+                document.getElementById('cardAvatarLetter').innerText = firstLetter;
+                document.getElementById('cardUserName').innerText = name;
+                document.getElementById('cardUserEmail').innerText = email;
+            } else {
+                icon.classList.remove('hidden');
+                initialSpan.classList.add('hidden');
+                regForm.classList.remove('hidden');
+                displayCard.classList.add('hidden');
+            }
+        }
+
+        function saveUserProfile(e) {
+            if (e) e.preventDefault();
+            const name = document.getElementById('userNameVal').value.trim();
+            const email = document.getElementById('userEmailVal').value.trim();
+
+            if (name && email) {
+                localStorage.setItem('kihampa_user_name', name);
+                localStorage.setItem('kihampa_user_email', email);
+                updateAvatarDisplay();
+                closeMailModal();
+            }
+        }
+
+        function resetUserProfile() {
+            if (confirm("Je, unataka kuondoka?")) {
+                localStorage.removeItem('kihampa_user_name');
+                localStorage.removeItem('kihampa_user_email');
+                updateAvatarDisplay();
+            }
+        }
+
+        // --- FULL POST READER ENGINE ---
+        function openPostReader(index) {
+            const post = globalFeedData[index];
+            if (!post) return;
+
+            document.getElementById('readerSource').innerText = post.source;
+            document.getElementById('readerTitle').innerText = post.title;
+            document.getElementById('readerImage').src = post.image;
+            document.getElementById('readerContent').innerText = post.fullContent || post.content;
+
+            const linkArea = document.getElementById('readerExternalLinkArea');
+            if (post.link && post.link !== '#') {
+                linkArea.innerHTML = `
+                    <a href="${post.link}" target="_blank" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow flex items-center justify-center gap-2">
+                        Soma zaidi kwenye tovuti ya asili <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    </a>
+                `;
+            } else {
+                linkArea.innerHTML = '';
+            }
+
+            document.getElementById('postReaderModal').classList.remove('hidden');
+        }
+
+        function closePostReader() {
+            document.getElementById('postReaderModal').classList.add('hidden');
+        }
+
+        // --- RSS & SUPABASE FEEDS ---
+        const ALL_FEEDS = [
+            { name: "Google News Swahili", url: "https://news.google.com/rss?hl=sw&gl=TZ&ceid=TZ:sw" },
+            { name: "BBC Swahili", url: "https://www.bbc.com/swahili/index.xml" }
+        ];
+
+        async function fetchAllGlobalNews() {
+            const feedContainer = document.getElementById('postsFeedList');
+            feedContainer.innerHTML = `<div class="text-center py-8 text-xs text-gray-400"><i class="fa-solid fa-spinner fa-spin mr-2 text-blue-400 text-lg"></i>Inapakia habari na posts...</div>`;
+
+            globalFeedData = [];
+            let tickerTitles = [];
+
+            try {
+                let { data } = await _supabase.from('ideas').select('*').order('created_at', { ascending: false });
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        globalFeedData.push({
+                            title: item.title || 'Tangazo Mpya',
+                            content: item.details ? (item.details.substring(0, 140) + "...") : "",
+                            fullContent: item.details,
+                            source: 'Kihampa Official',
+                            image: item.image || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600',
+                            link: '#',
+                            isPinned: true
+                        });
+                        tickerTitles.push(`📌 ${item.title}`);
+                    });
+                }
+            } catch(e) {}
+
+            const fetchPromises = ALL_FEEDS.map(async (src) => {
+                try {
+                    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}`);
+                    const data = await res.json();
+                    if (data.status === 'ok' && data.items) {
+                        data.items.forEach(item => {
+                            const cleanText = item.description ? item.description.replace(/<[^>]*>?/gm, '') : item.title;
+                            globalFeedData.push({
+                                title: item.title,
+                                content: cleanText.substring(0, 140) + "...",
+                                fullContent: cleanText,
+                                source: src.name,
+                                image: item.thumbnail || "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600",
+                                link: item.link,
+                                isPinned: false
+                            });
+                            tickerTitles.push(`🔥 ${item.title}`);
+                        });
+                    }
+                } catch(e) {}
+            });
+
+            await Promise.all(fetchPromises);
+
+            if (tickerTitles.length > 0) {
+                document.getElementById('motivationTicker').innerHTML = tickerTitles.slice(0, 8).join(" &nbsp;&nbsp; | &nbsp;&nbsp; ");
+            }
+
+            renderFeed(globalFeedData);
+        }
+
+        function renderFeed(posts) {
+            const feedContainer = document.getElementById('postsFeedList');
+            if (posts.length === 0) {
+                feedContainer.innerHTML = `<div class="text-center py-6 text-xs text-gray-400">Hakuna habari kwa sasa.</div>`;
+                return;
+            }
+
+            feedContainer.innerHTML = posts.map((post, index) => `
+                <div onclick="openPostReader(${index})" class="bg-[#2b2d33] rounded-3xl overflow-hidden border ${post.isPinned ? 'border-emerald-500/70' : 'border-gray-700/50'} shadow-lg hover:border-blue-500/50 transition cursor-pointer">
+                    <div class="relative">
+                        <img src="${post.image}" class="w-full h-48 object-cover" onerror="this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=600'">
+                        ${post.isPinned ? `
+                            <span class="absolute top-3 left-3 bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow">
+                                RASMI
+                            </span>
+                        ` : ''}
+                    </div>
+                    <div class="p-4 space-y-2">
+                        <h2 class="font-bold text-sm text-gray-100 leading-snug hover:text-blue-400">
+                            ${post.title}
+                        </h2>
+                        <p class="text-[11px] text-gray-400 line-clamp-3">${post.content}</p>
+                        <div class="flex justify-between items-center text-xs text-gray-400 pt-2 border-t border-gray-800">
+                            <span class="text-blue-400 font-semibold text-[11px]">
+                                ${post.source}
+                            </span>
+                            <span class="bg-blue-600/20 text-blue-400 px-3 py-1 rounded-xl text-[10px] font-bold flex items-center gap-1">
+                                Soma Yote <i class="fa-solid fa-book-open"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.onload = () => {
+            updateAvatarDisplay();
+            renderUserShortcuts();
+            fetchAllGlobalNews();
+        };
+    </script>
+</body>
+</html>
