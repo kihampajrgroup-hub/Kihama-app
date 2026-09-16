@@ -8,18 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @keyframes discoLights {
-            0% { color: #ff0055; text-shadow: 0 0 10px #ff0055; }
-            25% { color: #00e5ff; text-shadow: 0 0 10px #00e5ff; }
-            50% { color: #39ff14; text-shadow: 0 0 10px #39ff14; }
-            75% { color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
-            100% { color: #ffea00; text-shadow: 0 0 10px #ffea00; }
-        }
-        .disco-brand {
+        /* Rangi ya Kijani cha Asili kwa Jina na Logo */
+        .natural-green-brand {
+            color: #2e7d32; /* Kijani cha asili */
             font-weight: 900;
-            animation: discoLights 1.5s infinite alternate ease-in-out;
             cursor: pointer;
             user-select: none;
+            transition: color 0.3s ease;
+        }
+        .natural-green-brand:hover {
+            color: #388e3c;
         }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -35,9 +33,16 @@
 
     <!-- TOP HEADER -->
     <header id="topHeader" class="w-full max-w-md mx-auto p-4 relative flex justify-center items-center">
-        <div onclick="handleBrandTap()" class="text-3xl font-black disco-brand tracking-wider text-center py-1">
-            KIHAMPA JR
+        <!-- Logo na Jina lenye Kijani cha Asili -->
+        <div onclick="handleBrandTap()" class="flex items-center gap-2.5 cursor-pointer py-1">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-600 to-green-800 flex items-center justify-center text-white shadow-lg border border-emerald-500/30">
+                <i class="fa-solid fa-[#2e7d32] fa-leaf text-lg text-emerald-200"></i>
+            </div>
+            <span class="text-2xl font-black tracking-wider text-[#2e7d32]">
+                KIHAMPA JR
+            </span>
         </div>
+
         <button onclick="openMailBox()" id="userAvatarBtn" class="absolute right-4 top-4 w-9 h-9 rounded-full bg-[#2d2f36] border border-gray-700 flex items-center justify-center text-blue-400 font-bold text-sm shadow hover:border-blue-500 transition uppercase">
             <i id="userAvatarIcon" class="fa-solid fa-user"></i>
             <span id="userAvatarInitial" class="hidden"></span>
@@ -84,7 +89,7 @@
             
             <!-- TICKER -->
             <div class="bg-[#2b2d33]/80 border border-emerald-500/30 rounded-2xl p-2.5 flex items-center gap-2 overflow-hidden shadow-inner">
-                <span class="bg-emerald-500 text-black text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0 uppercase tracking-wider">
+                <span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0 uppercase tracking-wider">
                     <i class="fa-solid fa-bolt text-yellow-300"></i> Dondoo
                 </span>
                 <marquee id="motivationTicker" class="text-xs text-emerald-300 font-semibold tracking-wide" behavior="scroll" direction="left" scrollamount="5">
