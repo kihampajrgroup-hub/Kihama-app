@@ -13,15 +13,13 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* KODI YA KUFICHA BADGE AU MANENO YA NETLIFY KWA IMARA ZAIDI */
+    /* KODI YA KUFICHA BADGE AU MANENO YA NETLIFY */
     .netlify-badge, 
     [a*="netlify"], 
     iframe[src*="netlify"],
     div[class*="netlify"],
     a[href*="netlify"],
-    [id*="netlify"],
-    footer[class*="netlify"],
-    .netlify-container {
+    [class*="netlify-badge"] {
       display: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
@@ -29,21 +27,13 @@
       height: 0 !important;
       width: 0 !important;
       position: absolute !important;
-      top: -9999px !important;
       left: -9999px !important;
     }
 
-    @keyframes discoLights {
-      0% { color: #ff0055; text-shadow: 0 0 8px #ff0055; }
-      25% { color: #00e5ff; text-shadow: 0 0 8px #00e5ff; }
-      50% { color: #39ff14; text-shadow: 0 0 8px #39ff14; }
-      75% { color: #ff00ff; text-shadow: 0 0 8px #ff00ff; }
-      100% { color: #ffea00; text-shadow: 0 0 8px #ffea00; }
-    }
-    .disco-brand {
-      font-weight: 900;
-      letter-spacing: 1.5px;
-      animation: discoLights 1.2s infinite alternate ease-in-out;
+    .brand-title {
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #059669; /* Rangi ya kijani kibichi (Emerald-600) */
     }
     .nav-item.active {
       color: #059669;
@@ -89,7 +79,7 @@
           KG
         </div>
         <div>
-          <span class="disco-brand text-base block leading-tight">KIHAMPA JR</span>
+          <span class="brand-title text-base block leading-tight">KIHAMPA JR</span>
           <span class="text-xs text-gray-400 font-medium">Softsamic UI • Stoo & Mauzo</span>
         </div>
       </div>
@@ -385,7 +375,7 @@
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
           <h2 class="text-lg font-bold text-gray-800">Anzisha Mfumo Upya (Reset)</h2>
-          <p class="text-xs text-gray-500">Kitendo hiki kitafuta data zote za **Bidhaa, Mauzo, Oda, na Mawazo**. Orodha na namba za **Wateja HAZITAFUTWA kiasi chochote**.</p>
+          <p class="text-xs text-gray-500">Kitendo hiki kitafuta data zote za **Bidhaa, Mauzo, Oda na Mawazo**. Orodha na namba za **Wateja hazitafutwa**.</p>
         </div>
         
         <form id="resetForm" onsubmit="handleSystemReset(event)" class="space-y-3 pt-2">
@@ -413,6 +403,7 @@
         <i class="fa-solid fa-receipt text-base mb-0.5"></i>
         <span class="text-[9px] font-semibold">Mauzo</span>
       </button>
+
       <button onclick="showPage('customersPage')" id="nav-customersPage" class="nav-item flex-1 flex flex-col items-center text-gray-400">
         <i class="fa-solid fa-address-book text-base mb-0.5"></i>
         <span class="text-[9px] font-semibold">Wateja</span>
@@ -430,20 +421,11 @@
 
   <!-- Logic Script & Supabase Integration -->
   <script>
-    // SCRIPT YA KUONDOA BADGE YA NETLIFY KWA UHAKIKA ZAIDI (MUTATION OBSERVER)
-    function removeNetlifyBadges() {
-      const netlifyBadges = document.querySelectorAll('.netlify-badge, [a*="netlify"], iframe[src*="netlify"], div[class*="netlify"], a[href*="netlify"], [id*="netlify"], footer[class*="netlify"]');
+    // SCRIPT YA KUONDOA BADGE YA NETLIFY AUTOMATICALLY
+    setInterval(function() {
+      const netlifyBadges = document.querySelectorAll('.netlify-badge, [a*="netlify"], iframe[src*="netlify"], div[class*="netlify"], a[href*="netlify"], [class*="netlify-badge"]');
       netlifyBadges.forEach(el => el.remove());
-    }
-    
-    // Kagua na kuondoa kila mara
-    setInterval(removeNetlifyBadges, 300);
-    
-    // Observer inayofuatilia mabadiliko ya DOM na kufuta Netlify mara moja
-    const observer = new MutationObserver(() => {
-      removeNetlifyBadges();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    }, 100);
 
     // TAARIFA ZA SUPABASE
     const SUPABASE_URL = "https://ifqwfedfqvomdhgmlnzi.supabase.co";
@@ -617,7 +599,7 @@
       }
     }
 
-    // RESET SYSTEM (PASSWORD: 1998) - WATEJA HAWAFUTWI!
+    // RESET SYSTEM (PASSWORD: 1998)
     async function handleSystemReset(e) {
       e.preventDefault();
       const inputPass = document.getElementById('resetPassword').value.trim();
@@ -628,10 +610,9 @@
         return;
       }
 
-      const confirmAction = confirm("⚠️ JE, UNA UHAKIKA WA KUANZA UPYA?\n\nData zote za Mauzo, Stoo, Oda, na Mawazo zitafutwa. Namba na taarifa za wateja HAZITAFUTWA KABISA!");
+      const confirmAction = confirm("⚠️ JE, UNA UHAKIKA WA KUANZA UPYA?\n\nData zote za Mauzo, Stoo, Oda na Mawazo zitafutwa. Namba na taarifa za wateja HAZITAFUTWA!");
       if (confirmAction) {
         try {
-          // Inafuta tu Bidhaa, Mauzo, Oda, na Mawazo badala ya wateja
           await Promise.all([
             _supabase.from('products').delete().neq('id', '000'),
             _supabase.from('sales').delete().neq('id', '000'),
@@ -823,15 +804,11 @@
       }
     }
 
-    // FUNCTION MPYA YA KUFUTA MTEJA MMOJA MMOJA
-    async function deleteCustomer(customerId, customerName) {
-      if (confirm(`Je, una uhakika unataka kumfuta mteja "${customerName}" kwenye kitabu cha wateja?`)) {
-        const { error } = await _supabase.from('customers').delete().eq('id', customerId);
-        if (error) {
-          alert("Hitilafu katika kufuta mteja: " + error.message);
-        } else {
-          await fetchDataFromSupabase();
-        }
+    // KITUFE CHA KUFUTA MTEJA MOJA KWA MOJA
+    async function deleteCustomer(customerId) {
+      if (confirm('Je, una uhakika wa kufuta namba ya mteja huyu kabisa?')) {
+        await _supabase.from('customers').delete().eq('id', customerId);
+        await fetchDataFromSupabase();
       }
     }
 
@@ -870,7 +847,7 @@
                 </span>
               </div>
               <div class="flex gap-1.5 items-center">
-                <button onclick="togglePhoneStatus('${c.id}')" class="p-2.5 rounded-xl border text-xs font-semibold transition ${isInactive ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' : 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'}" title="Badili Hali ya Namba">
+                <button onclick="togglePhoneStatus('${c.id}')" class="p-2.5 rounded-xl border text-xs font-semibold transition ${isInactive ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' : 'bg-yellow-50 text-yellow-600 border-yellow-200 hover:bg-yellow-100'}" title="Badili Hali ya Namba">
                   <i class="fa-solid ${isInactive ? 'fa-phone' : 'fa-phone-slash'}"></i>
                 </button>
                 <a href="${mapUrl}" target="_blank" class="bg-blue-50 text-blue-600 p-2.5 rounded-xl border border-blue-100 inline-flex items-center justify-center hover:bg-blue-100 transition" title="Fungua Ramani">
@@ -879,9 +856,8 @@
                 <a href="tel:${c.phone}" class="bg-emerald-50 text-emerald-600 p-2.5 rounded-xl border border-emerald-100 inline-flex items-center justify-center hover:bg-emerald-100 transition">
                   <i class="fa-solid fa-paper-plane text-sm"></i>
                 </a>
-                <!-- KITUFE CHA KUFUTA MTEJA MMOJA MMOJA -->
-                <button onclick="deleteCustomer('${c.id}', '${c.name.replace(/'/g, "\\'")}')" class="bg-rose-50 text-rose-600 p-2.5 rounded-xl border border-rose-100 inline-flex items-center justify-center hover:bg-rose-100 transition" title="Futa Mteja Huyu">
-                  <i class="fa-solid fa-trash-can text-sm"></i>
+                <button onclick="deleteCustomer('${c.id}')" class="p-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition" title="Futa Mteja">
+                  <i class="fa-solid fa-trash text-sm"></i>
                 </button>
               </div>
             </div>
@@ -1032,3 +1008,4 @@
   </script>
 </body>
 </html>
+id=""
